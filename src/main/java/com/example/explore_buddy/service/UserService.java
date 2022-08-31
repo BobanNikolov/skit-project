@@ -9,6 +9,7 @@ import com.example.explore_buddy.model.Location;
 import com.example.explore_buddy.repository.ILocationsRepository;
 import com.example.explore_buddy.repository.IUserRepository;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -66,10 +67,14 @@ public class UserService implements IUserService, UserDetailsService {
     Location location = locationsRepository.getById(id);
     AppUser user = userRepository.findUserByEmail(email);
     if (user.getFavouriteLocations().contains(location)) {
-      user.getFavouriteLocations().remove(location);
+      var tmpList = new ArrayList<>(user.getFavouriteLocations());
+      tmpList.remove(location);
+      user.setFavouriteLocations(tmpList);
       return false;
     } else {
-      user.getFavouriteLocations().add(location);
+      var tmpList = new ArrayList<>(user.getFavouriteLocations());
+      tmpList.add(location);
+      user.setFavouriteLocations(tmpList);
       return true;
     }
   }
