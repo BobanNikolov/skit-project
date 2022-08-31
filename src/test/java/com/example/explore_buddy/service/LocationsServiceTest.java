@@ -1,30 +1,30 @@
 package com.example.explore_buddy.service;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static support.TestObjectGenerator.generateLocation;
-
+import com.example.explore_buddy.ExploreBuddyApplication;
 import com.example.explore_buddy.model.Location;
 import com.example.explore_buddy.repository.ILocationsRepository;
 import com.example.explore_buddy.repository.IUserRepository;
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static support.TestObjectGenerator.generateAppUser;
+import static support.TestObjectGenerator.generateLocation;
 
 class LocationsServiceTest {
   private ILocationsRepository locationsRepository;
   private IUserRepository userRepository;
   private LocationsService instanceUnderTest;
+  private ExploreBuddyApplication exploreBuddyApplication;
 
   @BeforeEach
   void init() {
+    exploreBuddyApplication = mock(ExploreBuddyApplication.class);
     locationsRepository = mock(ILocationsRepository.class);
     userRepository = mock(IUserRepository.class);
     instanceUnderTest = new LocationsService(locationsRepository, userRepository);
@@ -318,6 +318,379 @@ class LocationsServiceTest {
   }
 
   @Test
+  void testGetLocationTokenNull() {
+    var location = generateLocation();
+    location.setId(1);
+    var location1 = generateLocation();
+    location1.setId(2);
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(null);
+      when(locationsRepository.getById(anyInt())).thenReturn(location);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+
+      final var result = this.instanceUnderTest.getLocation(2);
+
+      assertNull(result);
+    }
+  }
+
+  @Test
+  void testGetLocation() {
+    var location = generateLocation();
+    location.setId(1);
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(token);
+      when(locationsRepository.getById(anyInt())).thenReturn(location);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+
+      final var result = this.instanceUnderTest.getLocation(1);
+
+      assertNotNull(result);
+      verify(locationsRepository).getById(anyInt());
+      verify(userRepository).findUserByEmail(anyString());
+    }
+  }
+
+  @Test
+  void testGetLocationNullFinal() {
+    var location = generateLocation();
+    location.setId(1);
+    var location1 = generateLocation();
+    location1.setId(2);
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(token);
+      when(locationsRepository.getById(anyInt())).thenReturn(location);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+
+      final var result = this.instanceUnderTest.getLocation(2);
+
+      assertNull(result);
+    }
+  }
+
+  @Test
+  void testGetMarkersQueryNullIsFavouriteFalse() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+    String[] types = new String[2];
+    types[0] = "CAVE";
+    types[1] = "WATERFALL";
+
+    var locations = List.of(location1, location2, location3);
+
+    when(locationsRepository.findLocationsByTypeIsIn(anyList())).thenReturn(locations);
+
+    final var result = this.instanceUnderTest.getMarkers(null, types, false);
+
+    assertNotNull(result);
+    verify(locationsRepository).findLocationsByTypeIsIn(anyList());
+  }
+
+  @Test
+  void testGetMarkersTypesNullIsFavouriteFalse() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+
+    var locations = List.of(location1, location2, location3);
+
+    when(locationsRepository.findLocationsByNameContainingIgnoreCase(anyString())).thenReturn(locations);
+
+    final var result = this.instanceUnderTest.getMarkers("test", null, false);
+
+    assertNotNull(result);
+    verify(locationsRepository).findLocationsByNameContainingIgnoreCase(anyString());
+  }
+
+  @Test
+  void testGetMarkersBothNullIsFavouriteFalse() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+
+    var locations = List.of(location1, location2, location3);
+
+    when(locationsRepository.findAll()).thenReturn(locations);
+
+    final var result = this.instanceUnderTest.getMarkers(null, null, false);
+
+    assertNotNull(result);
+    verify(locationsRepository).findAll();
+  }
+
+  @Test
+  void testGetMarkersBothNotNullIsFavouriteFalse() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+    String[] types = new String[2];
+    types[0] = "CAVE";
+    types[1] = "WATERFALL";
+
+    var locations = List.of(location1, location2, location3);
+
+    when(locationsRepository.findLocationsByTypeIsInAndNameContainingIgnoreCase(anyList(),anyString())).thenReturn(locations);
+
+    final var result = this.instanceUnderTest.getMarkers("test", types, false);
+
+    assertNotNull(result);
+    verify(locationsRepository).findLocationsByTypeIsInAndNameContainingIgnoreCase(anyList(),anyString());
+  }
+
+  @Test
+  void testGetMarkersBothNullIsFavouriteTrue() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(token);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+      when(locationsRepository.findAll()).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers(null, null, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findAll();
+      verify(userRepository).findUserByEmail(anyString());
+    }
+  }
+
+  @Test
+  void testGetMarkersQueryNullIsFavouriteTrue() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+    String[] types = new String[2];
+    types[0] = "CAVE";
+    types[1] = "WATERFALL";
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(token);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+      when(locationsRepository.findLocationsByTypeIsIn(anyList())).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers(null, types, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findLocationsByTypeIsIn(anyList());
+      verify(userRepository).findUserByEmail(anyString());
+    }
+  }
+
+  @Test
+  void testGetMarkersTypesNullIsFavouriteTrue() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(token);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+      when(locationsRepository.findLocationsByNameContainingIgnoreCase(anyString())).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers("test", null, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findLocationsByNameContainingIgnoreCase(anyString());
+      verify(userRepository).findUserByEmail(anyString());
+    }
+  }
+
+  @Test
+  void testGetMarkersBothNotNullIsFavouriteTrue() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+    String[] types = new String[2];
+    types[0] = "CAVE";
+    types[1] = "WATERFALL";
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(token);
+      when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+      when(locationsRepository.findLocationsByTypeIsInAndNameContainingIgnoreCase(anyList(), anyString())).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers("test", types, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findLocationsByTypeIsInAndNameContainingIgnoreCase(anyList(), anyString());
+      verify(userRepository).findUserByEmail(anyString());
+    }
+  }
+
+  @Test
+  void testGetMarkersBothNullIsFavouriteTrueTokenNull() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(null);
+      when(locationsRepository.findAll()).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers(null, null, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findAll();
+    }
+  }
+
+  @Test
+  void testGetMarkersQueryNullIsFavouriteTrueTokenNull() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+    String[] types = new String[2];
+    types[0] = "CAVE";
+    types[1] = "WATERFALL";
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(null);
+      when(locationsRepository.findLocationsByTypeIsIn(anyList())).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers(null, types, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findLocationsByTypeIsIn(anyList());
+    }
+  }
+
+  @Test
+  void testGetMarkersTypesNullIsFavouriteTrueTokenNull() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(null);
+      when(locationsRepository.findLocationsByNameContainingIgnoreCase(anyString())).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers("test", null, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findLocationsByNameContainingIgnoreCase(anyString());
+    }
+  }
+
+  @Test
+  void testGetMarkersBothNotNullIsFavouriteTrueTokenNull() {
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    var location3 = generateLocation();
+    location3.setId(3);
+    String[] types = new String[2];
+    types[0] = "CAVE";
+    types[1] = "WATERFALL";
+
+    var locations = List.of(location1, location2, location3);
+
+    var user = generateAppUser();
+    user.setFavouriteLocations(List.of(location1));
+    var token = user.getEmail();
+
+    try (MockedStatic<ExploreBuddyApplication> utilities = mockStatic(ExploreBuddyApplication.class)) {
+      utilities.when(ExploreBuddyApplication::getToken).thenReturn(null);
+      when(locationsRepository.findLocationsByTypeIsInAndNameContainingIgnoreCase(anyList(), anyString())).thenReturn(locations);
+
+      final var result = this.instanceUnderTest.getMarkers("test", types, true);
+
+      assertNotNull(result);
+      verify(locationsRepository).findLocationsByTypeIsInAndNameContainingIgnoreCase(anyList(), anyString());
+    }
+  }
+
+
+  @Test
   void testDeleteLocationByIdNull() {
     assertThrows(IllegalArgumentException.class, () -> {
       this.instanceUnderTest.deleteLocationById(null);
@@ -352,7 +725,7 @@ class LocationsServiceTest {
     var type1 = "CAVE";
     var type2 = "WATERFALL";
     String[] locationTypes = new String[2];
-    locationTypes[0]  = type1;
+    locationTypes[0] = type1;
     locationTypes[1] = type2;
 
     final var result = this.instanceUnderTest.convertToTypeFromString(locationTypes);

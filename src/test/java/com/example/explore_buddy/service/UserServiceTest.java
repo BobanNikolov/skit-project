@@ -50,6 +50,47 @@ class UserServiceTest {
   }
 
   @Test
+  void testFindUserByEmailEmailNull() {
+    assertThrows(IllegalArgumentException.class, () -> {
+      this.instanceUnderTest.findUserByEmail(null);
+    });
+  }
+
+  @Test
+  void testFindUserByEmailEmailEmpty() {
+    assertThrows(IllegalArgumentException.class, () -> {
+      this.instanceUnderTest.findUserByEmail("");
+    });
+  }
+
+  @Test
+  void testFindUserByEmailEmailValidatorFalse() {
+    when(emailValidator.test(anyString())).thenReturn(false);
+
+    assertThrows(IllegalArgumentException.class, () -> {
+      this.instanceUnderTest.findUserByEmail("test");
+    });
+  }
+
+  @Test
+  void testFindUserByEmail() {
+    var user = generateAppUser();
+    var location1 = generateLocation();
+    location1.setId(1);
+    var location2 = generateLocation();
+    location2.setId(2);
+    user.setFavouriteLocations(List.of(location1, location2));
+
+    when(emailValidator.test(anyString())).thenReturn(true);
+    when(userRepository.findUserByEmail(anyString())).thenReturn(user);
+
+    final var result = this.instanceUnderTest.findUserByEmail(user.getEmail());
+
+    assertNotNull(result);
+    verify(userRepository).findUserByEmail(anyString());
+  }
+
+  @Test
   void testGetFavouritesEmailNull() {
     assertThrows(IllegalArgumentException.class, () -> {
       this.instanceUnderTest.getFavourites(null);
