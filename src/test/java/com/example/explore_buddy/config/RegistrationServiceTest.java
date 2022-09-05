@@ -149,8 +149,9 @@ class RegistrationServiceTest {
   }
 
   @Test
-  void testConfirmationTokenCExpiredAtBeforeNow() {
+  void testConfirmationTokenExpiredAtBeforeNow() {
     var confirmationToken = generateConfirmationToken();
+    confirmationToken.setConfirmedAt(null);
     confirmationToken.setExpiresAt(LocalDateTime.now().minusDays(1));
     String token = "token";
 
@@ -158,6 +159,17 @@ class RegistrationServiceTest {
 
     assertThrows(IllegalStateException.class, () -> {
       final var result = this.instanceUnderTest.confirmToken(token);
+    });
+  }
+
+  @Test
+  void testConfirmationTokenImmediateThrow() {
+    var confirmationToken = generateConfirmationToken();
+    confirmationToken.setConfirmedAt(null);
+    confirmationToken.setExpiresAt(LocalDateTime.now().minusDays(1));
+
+    assertThrows(IllegalStateException.class, () -> {
+      final var result = this.instanceUnderTest.confirmToken(null);
     });
   }
 
