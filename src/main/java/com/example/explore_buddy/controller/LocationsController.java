@@ -39,7 +39,6 @@ public class LocationsController {
       locations = locationsService.importFromCsv(file);
     }
     return ResponseEntity.status(HttpStatus.OK).body(locations);
-
   }
 
   @GetMapping("/markers")

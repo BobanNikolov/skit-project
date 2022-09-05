@@ -29,8 +29,6 @@ public class UserController {
 
   private final IUserService userService;
   private final RegistrationService registrationService;
-  private final LoginService loginService;
-  private final ConfirmationTokenService confirmationTokenService;
 
   @GetMapping
   public List<AppUser> getUsers() {
@@ -55,7 +53,6 @@ public class UserController {
   @GetMapping("/registration/confirm")
   public String confirm(@RequestParam("token") String token) {
     return registrationService.confirmToken(token);
-
   }
 
   @PostMapping("/registration/admin")
@@ -72,5 +69,4 @@ public class UserController {
   public boolean setFavourites(@RequestParam String email, @PathVariable Integer id) {
     return userService.changeFavourite(id, email);
   }
-
 }
