@@ -1,9 +1,7 @@
 package com.example.explore_buddy.controller;
 
-import com.example.explore_buddy.config.LoginService;
 import com.example.explore_buddy.config.RegistrationRequest;
 import com.example.explore_buddy.config.RegistrationService;
-import com.example.explore_buddy.config.token.ConfirmationTokenService;
 import com.example.explore_buddy.model.AppUser;
 import com.example.explore_buddy.service.IUserService;
 import java.util.List;
