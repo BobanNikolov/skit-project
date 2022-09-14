@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.csv.CSVFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -66,14 +67,14 @@ public class LocationsService implements ILocationsService {
     return checkAndSaveLocation(location);
   }
 
-  public List<Location> importFromCsv(MultipartFile file) {
+  public List<Location> importFromCsv(MultipartFile file, CSVFormat format) {
     try {
       String name =
           file.getOriginalFilename().substring(0, file.getOriginalFilename().length() - 4);
-      List<Location> locations = CSVHelper.csvToLocations(file.getInputStream(), name);
+      List<Location> locations = CSVHelper.csvToLocations(file.getInputStream(), name, format);
       locationsRepository.saveAll(locations);
       return locations;
-    } catch (IOException e) {
+    } catch (NullPointerException | IOException e ) {
       throw new RuntimeException("fail to store csv data: " + e.getMessage());
     }
   }

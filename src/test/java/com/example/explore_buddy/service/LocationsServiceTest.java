@@ -1,13 +1,22 @@
 package com.example.explore_buddy.service;
 
 import com.example.explore_buddy.ExploreBuddyApplication;
+import com.example.explore_buddy.helpers.CSVHelper;
 import com.example.explore_buddy.model.Location;
 import com.example.explore_buddy.repository.ILocationsRepository;
 import com.example.explore_buddy.repository.IUserRepository;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,12 +28,12 @@ import static support.TestObjectGenerator.generateLocation;
 class LocationsServiceTest {
   private ILocationsRepository locationsRepository;
   private IUserRepository userRepository;
+  private MultipartFile mockFile;
   private LocationsService instanceUnderTest;
-  private ExploreBuddyApplication exploreBuddyApplication;
 
   @BeforeEach
   void init() {
-    exploreBuddyApplication = mock(ExploreBuddyApplication.class);
+    mockFile = mock(MultipartFile.class);
     locationsRepository = mock(ILocationsRepository.class);
     userRepository = mock(IUserRepository.class);
     instanceUnderTest = new LocationsService(locationsRepository, userRepository);
@@ -731,5 +740,34 @@ class LocationsServiceTest {
     final var result = this.instanceUnderTest.convertToTypeFromString(locationTypes);
 
     assertNotNull(result);
+  }
+
+  @Test
+  void testImportFromCsv() throws IOException {
+    File f = new File("src/test/resources/waterfall.csv");
+    MockMultipartFile file =
+        new MockMultipartFile("file", "waterfall.csv", "text/csv",
+            new FileInputStream(f));
+
+    final var result = this.instanceUnderTest.importFromCsv(file, CSVFormat.DEFAULT);
+
+    assertNotNull(result);
+    verify(locationsRepository).saveAll(anyList());
+  }
+
+  @Test
+  void testImportFromCsvException() throws IOException {
+    File f = new File("src/test/resources/waterfall.txt");
+    MockMultipartFile file =
+        new MockMultipartFile("file", "waterfall.txt", "text/plain",
+            new FileInputStream(f));
+
+    CSVParser csvParser = mock(CSVParser.class);
+
+    doThrow(IOException.class).when(csvParser).getRecords();
+
+    assertThrows(RuntimeException.class, () -> {
+      this.instanceUnderTest.importFromCsv(file, null);
+    });
   }
 }

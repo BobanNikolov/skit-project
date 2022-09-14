@@ -8,6 +8,7 @@ import com.example.explore_buddy.service.ILocationsService;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.csv.CSVFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,7 +37,7 @@ public class LocationsController {
   public ResponseEntity<List<Location>> postLocations(@RequestParam("file") MultipartFile file) {
     List<Location> locations = new ArrayList<>();
     if (CSVHelper.hasCSVFormat(file)) {
-      locations = locationsService.importFromCsv(file);
+      locations = locationsService.importFromCsv(file, CSVFormat.DEFAULT);
     }
     return ResponseEntity.status(HttpStatus.OK).body(locations);
   }

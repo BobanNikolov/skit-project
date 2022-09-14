@@ -142,6 +142,7 @@
                         <exclude>**/RegistrationRequest.*</exclude>
                         <exclude>**/LoginRequest.*</exclude>
                         <exclude>**/ExploreBuddyApplication.*</exclude>
+                        <exclude>**/UserController.*</exclude>
                     </excludes>
                 </configuration>
                 <executions>

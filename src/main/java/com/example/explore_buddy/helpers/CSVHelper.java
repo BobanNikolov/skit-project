@@ -26,10 +26,10 @@ public class CSVHelper {
         return true;
     }
 
-    public static List<Location> csvToLocations(InputStream is,String type) {
+    public static List<Location> csvToLocations(InputStream is,String type, CSVFormat format) {
         try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
              CSVParser csvParser = new CSVParser(fileReader,
-                     CSVFormat.DEFAULT.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
+                     format.withFirstRecordAsHeader().withIgnoreHeaderCase().withTrim())) {
 
             List<Location> locations = new ArrayList<Location>();
 
